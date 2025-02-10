@@ -10,6 +10,19 @@ typedef struct {
     int releaseYear;
 } Anime;
 
+typedef struct {
+    char day[2];
+    char month[2];
+    char year[4];
+} Date;
+
+typedef struct {
+    Anime anime;
+    int grade;
+    char watchDate[10];
+    char review[500];
+} Review;
+
 Anime animeList[300];
 
 void toLower(char *string) {
@@ -17,6 +30,14 @@ void toLower(char *string) {
         string[i] = tolower(string[i]);
     }
 }
+
+/*
+void splitDate(char data[10]) {
+    char *token;
+
+    strtok();
+}
+*/
 
 void populateAnimeList() {
     FILE *arquivo;
@@ -69,10 +90,11 @@ void populateAnimeList() {
 
 int writeReview() {
     int grade = -1;
-
-
+    char watchDate[10];
+    char review[500];
 
     while (grade < 0 || grade > 10) {
+        printf("\n");
         printf("Qual nota você daria para este anime, de 0 a 10? ");
         scanf("%d", &grade);
 
@@ -81,15 +103,23 @@ int writeReview() {
         printf("A nota que você escolheu é invalida. Por favor tente novamente.\n");
     }
 
-    printf("");
+    printf("Digite a data que você terminou de assistir o anime escolhido (FORMATO: dd/mm/aaaa): ");
+    getchar();
+    fgets(watchDate, sizeof(watchDate), stdin);
+
+    printf("Faça uma review sobre o anime assistido, ou deixe em branco se preferir (máx. 500 caracteres): ");
+    fgets(review, sizeof(review), stdin);
 }
 
 int catalogAnime() {
+    system("clear");
+
     Anime watchedAnime;
 
     char name[100];
     int animeIndexSelection = 1;
     char lowercaseAnimeListName[100];
+    int foundAnime = -1;
 
     printf("Vamos catalogar o anime que voce já assistiu!\n");
     printf("Qual o nome do anime assistido? ");
@@ -109,13 +139,24 @@ int catalogAnime() {
 
         if (strstr(lowercaseAnimeListName, name) != NULL) {
             printf("%d - %s | %s | %s | %d\n", i, animeList[i].name, animeList[i].author, animeList[i].genre, animeList[i].releaseYear);
+            foundAnime = 1;
         }
     }
+    if (foundAnime == -1) {
+        printf("Anime não encontrado. Verifique a ortografia e tente novamente.\n");
+        printf("-------------------------------------------\n");
+        catalogAnime();
+        return 0;
+    }
+
     printf("-------------------------------------------\n");
-    printf("Digite o numero relacionado ao anime/temporada que você assistiu: (-1 para voltar ao menu): ");
+    printf("Digite o numero relacionado ao anime/temporada que você assistiu (-1 para voltar ao menu): ");
     scanf("%d", &animeIndexSelection);
 
+    system("clear");
+
     if (animeIndexSelection == -1) {
+        menu();
         return 0;
     }
 
