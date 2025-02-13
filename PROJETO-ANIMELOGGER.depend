@@ -5,9 +5,10 @@
 	<string.h>
 	<ctype.h>
 
-1739222745 source:/home/gustavo/Documentos/Github/animelogger/main.c
+1739483449 source:/home/gustavo/Documentos/Github/animelogger/main.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	<ctype.h>
+	<unistd.h>
 
