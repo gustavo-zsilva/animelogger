@@ -3,6 +3,9 @@
 #include <string.h>
 #include <ctype.h> // UNIX
 #include <unistd.h> // UNIX
+#include <regex.h>
+
+#define ANIME_LIST_SIZE 300
 
 typedef struct {
     char name[100];
@@ -90,13 +93,26 @@ void populateAnimeList() {
     fclose(arquivo);
 }
 
-void writeToFile(Review review) {
+void writeReviewToFile(Review review) {
     FILE *arquivo;
 
     arquivo = fopen("reviews.txt", "a");
     fprintf(arquivo, "%s|%d|%s|%s", review.anime.name, review.grade, review.watchDate, review.text);
     fclose(arquivo);
 }
+
+void writeAnimeToWatchlist(Anime anime) {
+    FILE *arquivo;
+
+    arquivo = fopen("watchlist.txt", "a");
+    fprintf(arquivo, "%s|%s|%s|%d", anime.name, anime.author, anime.genre, anime.releaseYear);
+    fclose(arquivo);
+}
+
+/*
+int isValidDate() {
+}
+*/
 
 int writeReview(Anime selectedAnime) {
     Review review;
@@ -112,17 +128,17 @@ int writeReview(Anime selectedAnime) {
 
         if (grade >= 0 && grade <= 10) break;
 
-        printf("A nota que você escolheu é invalida. Por favor tente novamente.\n");
+        printf("\033[31mA nota que você escolheu é invalida. Por favor tente novamente.\033[0m\n");
     }
+
 
     printf("Digite a data que você terminou de assistir o anime escolhido (FORMATO: dd/mm/aaaa): ");
     getchar();
     fgets(watchDate, sizeof(watchDate), stdin);
+    watchDate[strlen(watchDate) - 1] = '\0';
 
     printf("Faça uma review sobre o anime assistido, ou deixe em branco se preferir (máx. 500 caracteres): ");
     fgets(reviewText, sizeof(reviewText), stdin);
-
-    reviewText[strlen(reviewText) - 1] = '\0';
 
     review.anime = selectedAnime;
     review.grade = grade;
@@ -130,24 +146,44 @@ int writeReview(Anime selectedAnime) {
     strcpy(review.text, reviewText);
 
     printf("Fazendo o upload de sua review ao ultra secreto banco de dados...\n");
-    writeToFile(review);
+    writeReviewToFile(review);
     sleep(3);
 
     printf("Pronto! Sua review de %s foi cadastrada com sucesso!\n", selectedAnime.name);
-    printf("Retornado ao menu principal.\n");
+    printf("Retornando ao menu principal.\n");
     return 0;
+}
+
+int searchAnime(char *name) {
+    // Buffer de cópia para não modificar a prop do anime na lista original
+    char lowercaseAnimeListName[100];
+    int foundAnime = 0;
+
+    toLower(name);
+
+    printf("-------------------------------------------\n");
+
+    for (int i = 0; i < ANIME_LIST_SIZE; i++) {
+        strcpy(lowercaseAnimeListName, animeList[i].name);
+        toLower(lowercaseAnimeListName);
+
+        if (strstr(lowercaseAnimeListName, name) != NULL) {
+            printf("\033[97m%d - %s | %s | %s | %d\033[0m\n", i, animeList[i].name, animeList[i].author, animeList[i].genre, animeList[i].releaseYear);
+            foundAnime = 1;
+        }
+    }
+
+    return foundAnime;
 }
 
 int catalogAnime() {
 
     Anime watchedAnime;
-    int foundAnime = -1;
+    int foundAnime = 0;
     int animeIndexSelection = 1;
 
-    while (foundAnime == -1) {
+    while (!foundAnime) {
         char name[100];
-        // Buffer de cópia para não modificar a prop do anime na lista original
-        char lowercaseAnimeListName[100];
 
         printf("Vamos catalogar o anime que voce já assistiu!\n");
         printf("Qual o nome do anime assistido? ");
@@ -157,21 +193,11 @@ int catalogAnime() {
         fgets(name, sizeof(name), stdin);
         name[strlen(name) - 1] = '\0';
 
-        toLower(name);
 
-        printf("-------------------------------------------\n");
-        // Mostra animes com nome relacionado
-        for (int i = 0; i < 300; i++) {
-            strcpy(lowercaseAnimeListName, animeList[i].name);
-            toLower(lowercaseAnimeListName);
+        // Pesquisa o anime
+        foundAnime = searchAnime(name);
 
-            if (strstr(lowercaseAnimeListName, name) != NULL) {
-                printf("%d - %s | %s | %s | %d\n", i, animeList[i].name, animeList[i].author, animeList[i].genre, animeList[i].releaseYear);
-                foundAnime = 1;
-            }
-        }
-
-        if (foundAnime == -1) {
+        if (!foundAnime) {
             printf("Anime não encontrado. Verifique a ortografia e tente novamente.\n");
             printf("-------------------------------------------\n");
         }
@@ -185,11 +211,55 @@ int catalogAnime() {
 
     if (animeIndexSelection == -1) return 0;
 
-    printf("Você selecionou %s (%d)!\n", animeList[animeIndexSelection].name, animeList[animeIndexSelection].releaseYear);
+    printf("\033[92mVocê selecionou %s (%d)!\033[0m\n", animeList[animeIndexSelection].name, animeList[animeIndexSelection].releaseYear);
 
     watchedAnime = animeList[animeIndexSelection];
 
     writeReview(watchedAnime);
+}
+
+int addToWatchlist() {
+    int foundAnime = 0;
+    int animeIndexSelection = -1;
+    Anime anime;
+
+    printf("Vamos adicionar seu anime à Watchlist!\n");
+
+
+    while (!foundAnime) {
+        char animeName[100];
+
+        printf("Digite o nome do anime que deseja assistir: ");
+
+        getchar();
+        fgets(animeName, sizeof(animeName), stdin);
+        animeName[strlen(animeName) - 1] = '\0';
+
+        foundAnime = searchAnime(animeName);
+
+        if (!foundAnime) {
+            printf("Anime não encontrado. Verifique a ortografia e tente novamente.\n");
+            printf("-------------------------------------------\n");
+        }
+    }
+
+    printf("-------------------------------------------\n");
+    printf("Digite o numero relacionado ao anime/temporada que você assistiu (-1 para voltar ao menu): ");
+    scanf("%d", &animeIndexSelection);
+
+    system("clear");
+
+    if (animeIndexSelection == -1) return 0;
+
+    anime = animeList[animeIndexSelection];
+
+    // strcat(animeNameWithLineBreak, anime.name);
+    // strcpy(anime.name, animeNameWithLineBreak);
+
+    // printf("%s", anime.name);
+
+    writeAnimeToWatchlist(anime);
+    printf("\033[92mO anime %s (%d) foi adicionado com sucesso à sua watchlist!\033[0m\n", animeList[animeIndexSelection].name, animeList[animeIndexSelection].releaseYear);
 }
 
 void menu() {
@@ -197,14 +267,15 @@ void menu() {
     while (1) {
         int opt = 0;
 
-        printf("⁍ MENU ⁌\n");
+        printf("\033[3m⁍ MENU ⁌\033[0m\n");
         printf("O que deseja fazer?\n");
         printf("-------------------------------------------\n");
         printf("1 - Quero catalogar um anime que já assisti!\n");
         printf("2 - Quero assistir um anime!\n");
-        printf("3 - Quero sair do programa!\n");
+        printf("3 - Quero editar minhas reviews!\n");
+        printf("4 - Quero visualizar/excluir animes da minha watchlist!\n");
+        printf("5 - Quero sair do programa!\n");
         printf("-------------------------------------------\n");
-        printf(" ");
         printf("Digite a opção desejada: ");
         scanf("%d", &opt);
 
@@ -214,20 +285,26 @@ void menu() {
             catalogAnime();
         } else if (opt == 2) {
             // Watchlist
+            system("clear");
+            addToWatchlist();
         } else if (opt == 3) {
+            // Edit reviews
+        } else if (opt == 4) {
+            // Manage watchlist
+        } else if (opt == 5) {
             // Sair do programa
             printf("Saindo do programa. Volte com mais animes para cadastrar!");
             exit(1);
         } else {
-            printf("Opção inválida, tente novamente.\n");
-            menu();
+            system("clear");
+            printf("\033[31mOpção inválida, tente novamente.\n\033[0m");
         }
     }
 }
 
 int main()
 {
-    printf("Bem vindo ao ANIMELOGGER, seu espaço para catalogar animes!\n");
+    printf("\033[95mBem vindo ao ANIMELOGGER, seu espaço para catalogar animes!\033[m\n");
     populateAnimeList();
     menu();
 
