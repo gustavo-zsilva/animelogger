@@ -93,11 +93,65 @@ void populateAnimeList() {
     fclose(arquivo);
 }
 
+int editReviews() {
+    FILE *arquivo;
+    arquivo = fopen("reviews.txt", "r");
+
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo. Reinicie o programa e tente novamente, ou cheque se o arquivo 'lista.txt' existe na raiz do projeto.\n");
+        exit(1);
+    }
+
+    char linha[600];
+    char *token;
+    int index = 0;
+
+    printf("Suas reviews:\n");
+
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        char animeName[100];
+        int grade;
+        char watchDate[12];
+        char text[500];
+
+        token = strtok(linha, "|");
+        strcpy(animeName, token);
+
+        token = strtok(NULL, "|");
+        grade = atoi(token);
+
+        token = strtok(NULL, "|");
+        strcpy(watchDate, token);
+
+        token = strtok(NULL, "|");
+        strcpy(text, token);
+
+        printf("\n\033[92m%s\033[0m - Nota %d\n", animeName, grade);
+        printf("\033[92m[");
+        for (int i = 0; i < 10; i++) {
+            if (i < grade) {
+                printf("X");
+            } else {
+                printf("-");
+            }
+        }
+        printf("]\033[0m\n");
+        printf("\033[3m%s\033[0m", text);
+        printf("Data que acabou de assistir: %s\n", watchDate);
+
+        index++;
+    }
+
+    printf("1 - Voltar ao menu");
+
+    fclose(arquivo);
+}
+
 void writeReviewToFile(Review review) {
     FILE *arquivo;
 
     arquivo = fopen("reviews.txt", "a");
-    fprintf(arquivo, "%s|%d|%s|%s", review.anime.name, review.grade, review.watchDate, review.text);
+    fprintf(arquivo, "%s|%d|%s|%s\n", review.anime.name, review.grade, review.watchDate, review.text);
     fclose(arquivo);
 }
 
@@ -105,14 +159,9 @@ void writeAnimeToWatchlist(Anime anime) {
     FILE *arquivo;
 
     arquivo = fopen("watchlist.txt", "a");
-    fprintf(arquivo, "%s|%s|%s|%d", anime.name, anime.author, anime.genre, anime.releaseYear);
+    fprintf(arquivo, "%s|%s|%s|%d\n", anime.name, anime.author, anime.genre, anime.releaseYear);
     fclose(arquivo);
 }
-
-/*
-int isValidDate() {
-}
-*/
 
 int writeReview(Anime selectedAnime) {
     Review review;
@@ -139,6 +188,7 @@ int writeReview(Anime selectedAnime) {
 
     printf("Faça uma review sobre o anime assistido, ou deixe em branco se preferir (máx. 500 caracteres): ");
     fgets(reviewText, sizeof(reviewText), stdin);
+    reviewText[strlen(reviewText) - 1] = '\0';
 
     review.anime = selectedAnime;
     review.grade = grade;
@@ -253,11 +303,6 @@ int addToWatchlist() {
 
     anime = animeList[animeIndexSelection];
 
-    // strcat(animeNameWithLineBreak, anime.name);
-    // strcpy(anime.name, animeNameWithLineBreak);
-
-    // printf("%s", anime.name);
-
     writeAnimeToWatchlist(anime);
     printf("\033[92mO anime %s (%d) foi adicionado com sucesso à sua watchlist!\033[0m\n", animeList[animeIndexSelection].name, animeList[animeIndexSelection].releaseYear);
 }
@@ -289,6 +334,8 @@ void menu() {
             addToWatchlist();
         } else if (opt == 3) {
             // Edit reviews
+            system("clear");
+            editReviews();
         } else if (opt == 4) {
             // Manage watchlist
         } else if (opt == 5) {
