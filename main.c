@@ -21,13 +21,15 @@ typedef struct {
 } Date;
 
 typedef struct {
-    Anime anime;
+    char anime[100];
     int grade;
     char watchDate[12];
     char text[500];
 } Review;
 
-Anime animeList[300];
+Anime animeList[ANIME_LIST_SIZE];
+Review reviews[ANIME_LIST_SIZE];
+int reviewIndex = 0;
 
 // UNIX
 void toLower(char *string) {
@@ -35,14 +37,6 @@ void toLower(char *string) {
         string[i] = tolower(string[i]);
     }
 }
-
-/*
-void splitDate(char data[10]) {
-    char *token;
-
-    strtok();
-}
-*/
 
 void populateAnimeList() {
     FILE *arquivo;
@@ -93,12 +87,12 @@ void populateAnimeList() {
     fclose(arquivo);
 }
 
-int editReviews() {
+void populateReviews() {
     FILE *arquivo;
     arquivo = fopen("reviews.txt", "r");
 
     if (arquivo == NULL) {
-        printf("Erro ao abrir o arquivo. Reinicie o programa e tente novamente, ou cheque se o arquivo 'lista.txt' existe na raiz do projeto.\n");
+        printf("Erro ao abrir o arquivo. Adicione reviews para utilizar esta funcionalidade.\n");
         exit(1);
     }
 
@@ -106,52 +100,114 @@ int editReviews() {
     char *token;
     int index = 0;
 
-    printf("Suas reviews:\n");
-
     while (fgets(linha, sizeof(linha), arquivo) != NULL) {
-        char animeName[100];
-        int grade;
-        char watchDate[12];
-        char text[500];
-
         token = strtok(linha, "|");
-        strcpy(animeName, token);
+        strcpy(reviews[index].anime, token);
 
         token = strtok(NULL, "|");
-        grade = atoi(token);
+        reviews[index].grade = atoi(token);
 
         token = strtok(NULL, "|");
-        strcpy(watchDate, token);
+        strcpy(reviews[index].watchDate, token);
 
         token = strtok(NULL, "|");
-        strcpy(text, token);
+        strcpy(reviews[index].text, token);
 
-        printf("\n\033[92m%s\033[0m - Nota %d\n", animeName, grade);
-        printf("\033[92m[");
-        for (int i = 0; i < 10; i++) {
-            if (i < grade) {
-                printf("X");
+        index++;
+        reviewIndex++;
+    }
+
+    fclose(arquivo);
+}
+
+int removeReview(int index) {
+    int offsetIndex = 0;
+
+    for (int i = 0; i < reviewIndex; i++) {
+        if (i == index) {
+            offsetIndex++;
+        }
+
+        reviews[i] = reviews[offsetIndex];
+        offsetIndex++;
+    }
+
+    // Atualiza tamanho do array
+    reviewIndex--;
+}
+
+int overwriteReviewFile() {
+    FILE *arquivo;
+    arquivo = fopen("reviews.txt", "w");
+
+    for (int i = 0; i < reviewIndex; i++) {
+        fprintf(arquivo, "%s|%d|%s|%s", reviews[i].anime, reviews[i].grade, reviews[i].watchDate, reviews[i].text);
+    }
+
+    fclose(arquivo);
+}
+
+int editReviews() {
+
+    int opt = -1;
+
+    printf("\033[1mSUAS REVIEWS (%d TOTAL):\033[0m\n", reviewIndex);
+
+    for (int i = 0; i < reviewIndex; i++) {
+        printf("\n\033[93m#%d %s\033[0m - Nota %d\n", i, reviews[i].anime, reviews[i].grade);
+        printf("\033[93m[");
+        for (int j = 0; j < 10; j++) {
+            if (j < reviews[i].grade) {
+                printf("■");
             } else {
-                printf("-");
+                printf("□");
             }
         }
         printf("]\033[0m\n");
-        printf("\033[3m%s\033[0m", text);
-        printf("Data que acabou de assistir: %s\n", watchDate);
-
-        index++;
+        printf("\033[3m%s\033[0m", reviews[i].text);
+        printf("Data que acabou de assistir: %s\n", reviews[i].watchDate);
     }
 
-    printf("1 - Voltar ao menu");
+    printf("-------------------------------------------\n");
 
-    fclose(arquivo);
+    printf("\033[3m1 - Voltar ao menu | 2 - Excluir review\033[0m\n");
+    scanf("%d", &opt);
+    getchar();
+
+    if (opt == 1) {
+        system("clear");
+        return 0;
+    } else if (opt == 2) {
+        int excludeIndex = 0;
+
+        printf("Digite o índice do review que deseja excluir: ");
+        scanf("%d", &excludeIndex);
+        getchar();
+
+        if (excludeIndex < 0 || excludeIndex > reviewIndex) {
+            printf("\033[31mÍndice inválido. Por favor, retorne e tente novamente.\033[0m\n");
+            return 0;
+        }
+
+        printf("Removendo sua review do banco de dados ultra secreto...\n");
+        sleep(3);
+
+        removeReview(excludeIndex);
+        overwriteReviewFile();
+
+        printf("\033[94mReview removida com sucesso! Retornando ao menu...\033[0m\n");
+    } else {
+        printf("\033[31mÍndice inválido. Por favor, retorne e tente novamente.\033[0m\n");
+    }
+
+    return 0;
 }
 
 void writeReviewToFile(Review review) {
     FILE *arquivo;
 
     arquivo = fopen("reviews.txt", "a");
-    fprintf(arquivo, "%s|%d|%s|%s\n", review.anime.name, review.grade, review.watchDate, review.text);
+    fprintf(arquivo, "%s|%d|%s|%s\n", review.anime, review.grade, review.watchDate, review.text);
     fclose(arquivo);
 }
 
@@ -190,7 +246,7 @@ int writeReview(Anime selectedAnime) {
     fgets(reviewText, sizeof(reviewText), stdin);
     reviewText[strlen(reviewText) - 1] = '\0';
 
-    review.anime = selectedAnime;
+    strcpy(review.anime, selectedAnime.name);
     review.grade = grade;
     strcpy(review.watchDate, watchDate);
     strcpy(review.text, reviewText);
@@ -199,7 +255,7 @@ int writeReview(Anime selectedAnime) {
     writeReviewToFile(review);
     sleep(3);
 
-    printf("Pronto! Sua review de %s foi cadastrada com sucesso!\n", selectedAnime.name);
+    printf("\033[94mPronto! Sua review de %s foi cadastrada com sucesso!\n\033[0m", selectedAnime.name);
     printf("Retornando ao menu principal.\n");
     return 0;
 }
@@ -353,6 +409,7 @@ int main()
 {
     printf("\033[95mBem vindo ao ANIMELOGGER, seu espaço para catalogar animes!\033[m\n");
     populateAnimeList();
+    populateReviews();
     menu();
 
     return 0;
