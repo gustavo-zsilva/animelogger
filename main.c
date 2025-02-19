@@ -15,12 +15,6 @@ typedef struct {
 } Anime;
 
 typedef struct {
-    char day[2];
-    char month[2];
-    char year[4];
-} Date;
-
-typedef struct {
     char anime[100];
     int grade;
     char watchDate[12];
@@ -29,6 +23,8 @@ typedef struct {
 
 Anime animeList[ANIME_LIST_SIZE];
 Review reviews[ANIME_LIST_SIZE];
+Anime watchlist[ANIME_LIST_SIZE];
+
 int reviewIndex = 0;
 
 // UNIX
@@ -55,34 +51,36 @@ void populateAnimeList() {
 
         token = strtok(linha, "|");
         if (token == NULL) {
-            printf("Erro: Ignorando linha nome\n");
+            printf("♥");
             continue;
         }
         strcpy(animeList[index].name, token);
 
         token = strtok(NULL, "|");
         if (token == NULL) {
-            printf("Erro: Ignorando linha autor\n");
+            printf("♦");
             continue;
         }
         strcpy(animeList[index].author, token);
 
         token = strtok(NULL, "|");
         if (token == NULL) {
-            printf("Erro: Ignorando linha gênero\n");
+            printf("♣");
             continue;
         }
         strcpy(animeList[index].genre, token);
 
         token = strtok(NULL, "|");
         if (token == NULL) {
-            printf("Erro: Ignorando linha ano\n");
+            printf("♠");
             continue;
         }
         animeList[index].releaseYear = atoi(token);
 
         index++;
     }
+
+    printf("\n");
 
     fclose(arquivo);
 }
@@ -201,6 +199,10 @@ int editReviews() {
     }
 
     return 0;
+}
+
+int editWatchlist() {
+
 }
 
 void writeReviewToFile(Review review) {
@@ -394,6 +396,7 @@ void menu() {
             editReviews();
         } else if (opt == 4) {
             // Manage watchlist
+            editWatchlist();
         } else if (opt == 5) {
             // Sair do programa
             printf("Saindo do programa. Volte com mais animes para cadastrar!");
@@ -407,7 +410,11 @@ void menu() {
 
 int main()
 {
-    printf("\033[95mBem vindo ao ANIMELOGGER, seu espaço para catalogar animes!\033[m\n");
+    printf("\033[95mBem-vindo ao ANIMELOGGER (Linux V.), seu espaço para catalogar animes!\033[m\n");
+    printf("\033[95mRepositório do Github: https://github.com/gustavo-zsilva/animelogger\033[m\n");
+    printf("\033[95mFeito com ♥ por Gustavo Z.\033[m\n");
+    printf("\n");
+
     populateAnimeList();
     populateReviews();
     menu();
