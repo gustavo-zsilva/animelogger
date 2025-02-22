@@ -26,6 +26,7 @@ Review reviews[ANIME_LIST_SIZE];
 Anime watchlist[ANIME_LIST_SIZE];
 
 int reviewIndex = 0;
+int watchlistIndex = 0;
 
 // UNIX
 void toLower(char *string) {
@@ -44,37 +45,25 @@ void populateAnimeList() {
 
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo. Reinicie o programa e tente novamente, ou cheque se o arquivo 'lista.txt' existe na raiz do projeto.\n");
-        exit(1);
+        return;
     }
 
     while (fgets(linha, sizeof(linha), arquivo) != NULL) {
 
         token = strtok(linha, "|");
-        if (token == NULL) {
-            printf("♥");
-            continue;
-        }
+        if (token == NULL) continue;
         strcpy(animeList[index].name, token);
 
         token = strtok(NULL, "|");
-        if (token == NULL) {
-            printf("♦");
-            continue;
-        }
+        if (token == NULL) continue;
         strcpy(animeList[index].author, token);
 
         token = strtok(NULL, "|");
-        if (token == NULL) {
-            printf("♣");
-            continue;
-        }
+        if (token == NULL) continue;
         strcpy(animeList[index].genre, token);
 
         token = strtok(NULL, "|");
-        if (token == NULL) {
-            printf("♠");
-            continue;
-        }
+        if (token == NULL) continue;
         animeList[index].releaseYear = atoi(token);
 
         index++;
@@ -89,10 +78,7 @@ void populateReviews() {
     FILE *arquivo;
     arquivo = fopen("reviews.txt", "r");
 
-    if (arquivo == NULL) {
-        printf("Erro ao abrir o arquivo. Adicione reviews para utilizar esta funcionalidade.\n");
-        exit(1);
-    }
+    if (arquivo == NULL) return;
 
     char linha[600];
     char *token;
@@ -100,19 +86,57 @@ void populateReviews() {
 
     while (fgets(linha, sizeof(linha), arquivo) != NULL) {
         token = strtok(linha, "|");
+        if (token == NULL) continue;
         strcpy(reviews[index].anime, token);
 
         token = strtok(NULL, "|");
+        if (token == NULL) continue;
         reviews[index].grade = atoi(token);
 
         token = strtok(NULL, "|");
+        if (token == NULL) continue;
         strcpy(reviews[index].watchDate, token);
 
         token = strtok(NULL, "|");
+        if (token == NULL) continue;
         strcpy(reviews[index].text, token);
 
         index++;
         reviewIndex++;
+    }
+
+    fclose(arquivo);
+}
+
+void populateWatchlist() {
+    FILE *arquivo;
+    arquivo = fopen("watchlist.txt", "r");
+
+    if (arquivo == NULL) return;
+
+    char linha[300];
+    char *token;
+    int index = 0;
+
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        token = strtok(linha, "|");
+        if (token == NULL) continue;
+        strcpy(watchlist[index].name, token);
+
+        token = strtok(NULL, "|");
+        if (token == NULL) continue;
+        strcpy(watchlist[index].author, token);
+
+        token = strtok(NULL, "|");
+        if (token == NULL) continue;
+        strcpy(watchlist[index].genre, token);
+
+        token = strtok(NULL, "|");
+        if (token == NULL) continue;
+        watchlist[index].releaseYear = atoi(token);
+
+        index++;
+        watchlistIndex++;
     }
 
     fclose(arquivo);
@@ -134,6 +158,22 @@ int removeReview(int index) {
     reviewIndex--;
 }
 
+int removeAnimeFromWatchlist(int index) {
+    int offsetIndex = 0;
+
+    for (int i = 0; i < watchlistIndex; i++) {
+        if (i == index) {
+            offsetIndex++;
+        }
+
+        watchlist[i] = watchlist[offsetIndex];
+        offsetIndex++;
+    }
+
+    // Atualiza tamanho do array
+    watchlistIndex--;
+}
+
 int overwriteReviewFile() {
     FILE *arquivo;
     arquivo = fopen("reviews.txt", "w");
@@ -145,7 +185,22 @@ int overwriteReviewFile() {
     fclose(arquivo);
 }
 
+int overwriteWatchlistFile() {
+    FILE *arquivo;
+    arquivo = fopen("watchlist.txt", "w");
+
+    for (int i = 0; i < watchlistIndex; i++) {
+        fprintf(arquivo, "%s|%s|%s|%d\n", watchlist[i].name, watchlist[i].author, watchlist[i].genre, watchlist[i].releaseYear);
+    }
+
+    fclose(arquivo);
+}
+
 int editReviews() {
+    if (reviewIndex == 0) {
+        printf("\033[31mVocê ainda não possui nenhuma review cadastrada.\033[0m\n");
+        return 0;
+    }
 
     int opt = -1;
 
@@ -162,7 +217,7 @@ int editReviews() {
             }
         }
         printf("]\033[0m\n");
-        printf("\033[3m%s\033[0m", reviews[i].text);
+        printf("\033[3m%s\033[0m\n", reviews[i].text);
         printf("Data que acabou de assistir: %s\n", reviews[i].watchDate);
     }
 
@@ -203,6 +258,54 @@ int editReviews() {
 
 int editWatchlist() {
 
+    if (watchlistIndex == 0) {
+        printf("\033[31mVocê ainda não possui nenhum anime na sua watchlist.\033[0m\n");
+        return 0;
+    }
+
+    int opt = -1;
+
+    printf("\033[1mSUA WATCHLIST (%d TOTAL ANIMES):\033[0m\n", watchlistIndex);
+
+    for (int i = 0; i < watchlistIndex; i++) {
+        printf("\n\033[93m#%d %s (%d)\033[0m\n", i, watchlist[i].name, watchlist[i].releaseYear);
+
+        printf("\033[3m%s / %s\033[0m\n", watchlist[i].author, watchlist[i].genre);
+    }
+
+    printf("-------------------------------------------\n");
+
+    printf("\033[3m1 - Voltar ao menu | 2 - Excluir anime da watchlist\033[0m\n");
+    scanf("%d", &opt);
+    getchar();
+
+    if (opt == 1) {
+        system("clear");
+        return 0;
+    } else if (opt == 2) {
+        int excludeIndex = 0;
+
+        printf("Digite o índice do anime que deseja excluir: ");
+        scanf("%d", &excludeIndex);
+        getchar();
+
+        if (excludeIndex < 0 || excludeIndex > watchlistIndex) {
+            printf("\033[31mÍndice inválido. Por favor, retorne e tente novamente.\033[0m\n");
+            return 0;
+        }
+
+        printf("Removendo seu anime da watchlist do banco de dados ultra secreto...\n");
+        sleep(3);
+
+        removeAnimeFromWatchlist(excludeIndex);
+        overwriteWatchlistFile();
+
+        printf("\033[94mAnime removido com sucesso! Retornando ao menu...\033[0m\n");
+    } else {
+        printf("\033[31mÍndice inválido. Por favor, retorne e tente novamente.\033[0m\n");
+    }
+
+    return 0;
 }
 
 void writeReviewToFile(Review review) {
@@ -255,6 +358,8 @@ int writeReview(Anime selectedAnime) {
 
     printf("Fazendo o upload de sua review ao ultra secreto banco de dados...\n");
     writeReviewToFile(review);
+    reviews[reviewIndex] = review;
+    reviewIndex++;
     sleep(3);
 
     printf("\033[94mPronto! Sua review de %s foi cadastrada com sucesso!\n\033[0m", selectedAnime.name);
@@ -267,15 +372,15 @@ int searchAnime(char *name) {
     char lowercaseAnimeListName[100];
     int foundAnime = 0;
 
-    toLower(name);
-
     printf("-------------------------------------------\n");
 
     for (int i = 0; i < ANIME_LIST_SIZE; i++) {
         strcpy(lowercaseAnimeListName, animeList[i].name);
-        toLower(lowercaseAnimeListName);
 
-        if (strstr(lowercaseAnimeListName, name) != NULL) {
+        toLower(lowercaseAnimeListName);
+        toLower(name);
+
+        if (strncmp(lowercaseAnimeListName, name, strlen(name)) == 0) {
             printf("\033[97m%d - %s | %s | %s | %d\033[0m\n", i, animeList[i].name, animeList[i].author, animeList[i].genre, animeList[i].releaseYear);
             foundAnime = 1;
         }
@@ -297,7 +402,6 @@ int catalogAnime() {
         printf("Qual o nome do anime assistido? ");
 
         // Remove \n do scanf anterior
-        getchar();
         fgets(name, sizeof(name), stdin);
         name[strlen(name) - 1] = '\0';
 
@@ -339,7 +443,6 @@ int addToWatchlist() {
 
         printf("Digite o nome do anime que deseja assistir: ");
 
-        getchar();
         fgets(animeName, sizeof(animeName), stdin);
         animeName[strlen(animeName) - 1] = '\0';
 
@@ -362,6 +465,8 @@ int addToWatchlist() {
     anime = animeList[animeIndexSelection];
 
     writeAnimeToWatchlist(anime);
+    watchlist[watchlistIndex] = anime;
+    watchlistIndex++;
     printf("\033[92mO anime %s (%d) foi adicionado com sucesso à sua watchlist!\033[0m\n", animeList[animeIndexSelection].name, animeList[animeIndexSelection].releaseYear);
 }
 
@@ -379,8 +484,9 @@ void menu() {
         printf("4 - Quero visualizar/excluir animes da minha watchlist!\n");
         printf("5 - Quero sair do programa!\n");
         printf("-------------------------------------------\n");
-        printf("Digite a opção desejada: ");
+        printf("Digite o número da opção desejada: ");
         scanf("%d", &opt);
+        getchar();
 
         if (opt == 1) {
             // Catalogar anime já assistido
@@ -396,6 +502,7 @@ void menu() {
             editReviews();
         } else if (opt == 4) {
             // Manage watchlist
+            system("clear");
             editWatchlist();
         } else if (opt == 5) {
             // Sair do programa
@@ -417,6 +524,7 @@ int main()
 
     populateAnimeList();
     populateReviews();
+    populateWatchlist();
     menu();
 
     return 0;
