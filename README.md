@@ -1,9 +1,39 @@
-<h1 align="center">ANIMELOGGER V1</h1>
-<p align="center">Animelogger is a C program that helps you track animes, reviews and watchtime.</p>
+# AnimeLogger
+**AnimeLogger** é um programa simples e eficiente para armazenar e gerenciar sua lista de animes favoritos diretamente do terminal.
 
-## Funcionalidades
+Por enquanto, suporte apenas para sistemas Linux.
 
-- [x] 300 animes available to search
-- [x] Build your own watchlist
-- [ ] 
-- [ ] Função watchlist
+## 📌 Funcionalidades
+- Adicionar animes à lista 📜
+- Exibir lista de animes registrados 📂
+- Buscar animes por nome 🔎
+- Remover animes da lista ❌
+
+## 🚀 Instalação e Uso
+
+### 📥 Clonando o Repositório
+```bash
+git clone https://github.com/gustavo-zsilva/animelogger.git
+cd animelogger
+```
+
+### 🔧 Compilação
+Para compilar o programa, utilize um compilador C, como `gcc`:
+```bash
+gcc main.c -o animelogger
+```
+
+### ▶️ Executando
+```bash
+./animelogger
+```
+
+## 🤝 Contribuição
+Fique à vontade para abrir um pull request! Sugestões são sempre bem-vindas. 😃
+
+## 📜 Licença
+Este projeto está sob a licença MIT. Consulte o arquivo `LICENSE` para mais detalhes.
+
+---
+
+Desenvolvido com ❤️ por [Gustavo Zonta](https://github.com/gustavo-zsilva)
